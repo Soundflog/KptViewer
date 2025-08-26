@@ -6,7 +6,9 @@
         xmlns:local="clr-namespace:Kpt_Viewer"
         xmlns:viewModels="clr-namespace:Kpt_Viewer.ViewModels"
         mc:Ignorable="d"
-        Title="KPT Viewer" Height="800" Width="1200">
+        Title="KPT Viewer" Height="800" Width="1200"
+        AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop"
+        >
     <Window.DataContext>
         <viewModels:MainViewModel />
     </Window.DataContext>

@@ -27,7 +27,7 @@ public class MainViewModel : ViewModelBase
     public ICommand ExitCommand { get; }
 
 
-    private const string AuthorName = "Artseabox";
+    private const string AuthorName = "Vershinin Pavel A., tg: @soundflogdev";
 
 
     public MainViewModel()
@@ -134,7 +134,7 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    private void ShowHelp()
+    private static void ShowHelp()
     {
         var sb = new StringBuilder();
         sb.AppendLine("KPT Viewer — краткое руководство:");
@@ -147,7 +147,7 @@ public class MainViewModel : ViewModelBase
             "4. Отметьте галочками нужные узлы и нажмите ‘Save selected’ для сохранения выбранных узлов в новый XML (с полной вложенностью).");
         sb.AppendLine();
         sb.AppendLine($"Автор: {AuthorName}");
-        sb.AppendLine($"Дата выполнения: {DateTime.Today:yyyy-MM-dd}");
+        sb.AppendLine($"Дата выполнения: 26.08.2025");
 
 
         MessageBox.Show(sb.ToString(), "Помощь", MessageBoxButton.OK, MessageBoxImage.Information);
