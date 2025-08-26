@@ -77,7 +77,7 @@ public class MainViewModel : ViewModelBase
     private void BuildTree(XDocument doc)
     {
         Roots.Clear();
-        var model = _indexBuilder.Build(doc);
+        var model = XmlIndexBuilder.Build(doc);
 
 
         foreach (var root in model.Roots)

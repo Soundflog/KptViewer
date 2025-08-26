@@ -5,79 +5,82 @@ namespace Kpt_Viewer.Services;
 
 public sealed class XmlIndexBuilder
 {
-    private static readonly RootDefinition[] _defs = new[]
-    {
-        new RootDefinition(
+    private static readonly RootDefinition[] Defs =
+    [
+        new(
             RootKind.Parcels,
             displayName: "Parcels",
-            containers: new[] { new ContainerSpec("land_records", "land_record") },
+            containers: [new ContainerSpec("land_records", "land_record")],
             idSelector: e => FirstNonEmpty(
                 e.Element("object")?.Element("common_data")?.Element("cad_number")?.Value,
                 e.Element("cad_number")?.Value)
         ),
-        new RootDefinition(
+        new(
             RootKind.ObjectRealty,
             displayName: "ObjectRealty",
-            containers: new[]
-            {
+            containers:
+            [
                 new ContainerSpec("build_records", "build_record"),
-                new ContainerSpec("construction_records", "construction_record"),
-// Some datasets might wrap construction_record singularly — handle gracefully in search
-            },
+                new ContainerSpec("construction_records", "construction_record")
+                // Some datasets might wrap construction_record singularly — handle gracefully in search
+            ],
             idSelector: e => FirstNonEmpty(
                 e.Element("object")?.Element("common_data")?.Element("cad_number")?.Value,
                 e.Element("cad_number")?.Value)
         ),
-        new RootDefinition(
+        new(
             RootKind.SpatialData,
             displayName: "SpatialData",
-            containers: new[] { new ContainerSpec("spatial_data", "entity_spatial") },
+            containers: [new ContainerSpec("spatial_data", "entity_spatial")],
             idSelector: e => e.Element("sk_id")?.Value
         ),
-        new RootDefinition(
+        new(
             RootKind.Bounds,
             displayName: "Bounds",
-            containers: new[] { new ContainerSpec("municipal_boundaries", "municipal_boundary_record") },
+            containers: [new ContainerSpec("municipal_boundaries", "municipal_boundary_record")],
             idSelector: e => e.Element("reg_numb_border")?.Value
         ),
-        new RootDefinition(
+        new(
             RootKind.Zones,
             displayName: "Zones",
-            containers: new[] { new ContainerSpec("zones_and_territories_records", "zones_and_territories_record") },
+            containers:
+            [
+                new ContainerSpec("zones_and_territories_records", "zones_and_territories_record"),
+                // чтобы парсер находил записи при любом названии контейнера
+                new ContainerSpec("zones_and_territories_boundaries", "zones_and_territories_record")
+            ],
             idSelector: e => e.Element("reg_numb_border")?.Value
-        ),
-    };
+        )
+    ];
 
-    public IndexModel Build(XDocument doc)
+    public static IndexModel Build(XDocument doc)
     {
         var roots = new List<RootItems>();
         var ns = doc.Root?.Name.Namespace ?? XNamespace.None; // No-op if no namespace
 
 
-        foreach (var def in _defs)
+        foreach (var def in Defs)
         {
             var rootItems = new RootItems(def.DisplayName);
             foreach (var container in def.Containers)
             {
-// Find <container> anywhere
+                // Find <container> anywhere
                 var containerEls = doc.Descendants(ns + container.ContainerName).ToList();
 
-
-                if (!containerEls.Any())
+                if (containerEls.Count == 0)
                 {
-// Some files might not have a dedicated container (e.g., loose construction_record). Search globally.
+                    // Some files might not have a dedicated container (e.g., loose construction_record). Search globally.
                     var looseItems = doc.Descendants(ns + container.ItemName);
                     foreach (var item in looseItems)
                         TryAdd(def, container, item, rootItems);
                     continue;
                 }
 
-
-                foreach (var cont in containerEls)
+                foreach (var item in containerEls
+                             .Select(cont => cont.Descendants(ns + container.ItemName))
+                             .SelectMany(items => items))
                 {
-                    var items = cont.Descendants(ns + container.ItemName);
-                    foreach (var item in items)
-                        TryAdd(def, container, item, rootItems);
+                    TryAdd(def, container, item, rootItems);
                 }
             }
 
@@ -87,24 +90,39 @@ public sealed class XmlIndexBuilder
         }
 
 
-// Sort IDs lexicographically for stable UI
+        // Sort IDs lexicographically for stable UI
         foreach (var r in roots)
             r.Items.Sort((a, b) => string.Compare(a.DisplayId, b.DisplayId, StringComparison.Ordinal));
 
 
         return new IndexModel(roots);
     }
-    
+
     private static void TryAdd(RootDefinition def, ContainerSpec container, XElement itemElement, RootItems rootItems)
     {
         var id = def.IdSelector(itemElement);
         if (string.IsNullOrWhiteSpace(id)) return;
-        rootItems.Items.Add(new NodeModel(def.Kind, id!, itemElement, container.ContainerName, container.ItemName));
-    }
 
+        var realContainer = GuessContainerName(itemElement);
+        rootItems.Items.Add(new NodeModel(
+            def.Kind, id, itemElement, realContainer, container.ItemName));
+    }
 
     private static string? FirstNonEmpty(params string?[] values)
         => values.FirstOrDefault(s => !string.IsNullOrWhiteSpace(s));
-    
+
+    private static string GuessContainerName(XElement item)
+    {
+        for (var p = item.Parent; p != null; p = p.Parent)
+        {
+            var name = p.Name.LocalName;
+            // известные контейнеры
+            if (name is "land_records" or "build_records" or "construction_records"
+                or "spatial_data" or "municipal_boundaries"
+                or "zones_and_territories_records" or "zones_and_territories_boundaries")
+                return name;
+        }
+
+        return "unknown_container";
+    }
 }
-    
