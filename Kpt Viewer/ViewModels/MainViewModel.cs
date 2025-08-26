@@ -15,19 +15,32 @@ public class MainViewModel : ViewModelBase
 {
     private readonly XmlIndexBuilder _indexBuilder = new();
     private readonly ExportService _exportService = new();
-
-
+    
     public ObservableCollection<RootNodeVm> Roots { get; } = new();
     private object? _selectedNode;
+    
     private List<RootItems> _allData = new();
-    private string _searchText = string.Empty;
-    public string SearchText
+    private string _searchId = string.Empty;
+    public string SearchId
     {
-        get => _searchText;
+        get => _searchId;
         set
         {
-            if (_searchText == value) return;
-            _searchText = value;
+            if (_searchId == value) return;
+            _searchId = value;
+            RaisePropertyChanged();
+            ApplyFilter();
+        }
+    }
+    
+    private string _searchAddress = string.Empty;
+    public string SearchAddress
+    {
+        get => _searchAddress;
+        set
+        {
+            if (_searchAddress == value) return;
+            _searchAddress = value;
             RaisePropertyChanged();
             ApplyFilter();
         }
@@ -56,7 +69,7 @@ public class MainViewModel : ViewModelBase
         ShowHelpCommand = new RelayCommand(_ => ShowHelp());
         CopyXmlCommand = new RelayCommand(_ => CopyXml(), _ => (_selectedNode as INodeVm)?.Element != null);
         ExitCommand = new RelayCommand(_ => Application.Current.Shutdown());
-        ClearSearchCommand = new RelayCommand(_ => { SearchText = string.Empty; });
+        ClearSearchCommand = new RelayCommand(_ => { SearchId = string.Empty; SearchAddress = string.Empty; });
     }
 
     public void OnTreeSelectionChanged(object? selected)
@@ -146,21 +159,27 @@ public class MainViewModel : ViewModelBase
     private void ApplyFilter()
     {
         Roots.Clear();
-        var query = (SearchText ?? string.Empty).Trim();
-        bool hasQuery = query.Length > 0;
+        var idQ = (SearchId ?? string.Empty).Trim();
+        var addrQ = (SearchAddress ?? string.Empty).Trim();
+        bool idOn = idQ.Length > 0;
+        bool addrOn = addrQ.Length > 0;
         StringComparison cmp = StringComparison.OrdinalIgnoreCase;
 
         foreach (var root in _allData)
         {
             var rootVm = new RootNodeVm(root.DisplayName);
             IEnumerable<NodeModel> items = root.Items;
-            if (hasQuery)
-                items = items.Where(i => i.DisplayId?.IndexOf(query, cmp) >= 0);
+            if (idOn)
+                items = items.Where(i => (i.DisplayId?.IndexOf(idQ, cmp) ?? -1) >= 0);
+            if (addrOn)
+                items = items.Where(i => (i.AddressText?.IndexOf(addrQ, cmp) ?? -1) >= 0);
+
 
             foreach (var item in items)
                 rootVm.Children.Add(new ItemNodeVm(item));
 
-            if (rootVm.Children.Count > 0 || !hasQuery)
+
+            if (rootVm.Children.Count > 0 || (!idOn && !addrOn))
             {
                 rootVm.RefreshHeader();
                 Roots.Add(rootVm);

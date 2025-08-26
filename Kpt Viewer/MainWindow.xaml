@@ -36,11 +36,14 @@
         
         <!-- Search bar -->
         <ToolBar DockPanel.Dock="Top">
-            <TextBlock Text="Поиск:" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBlock Text="ID:" Margin="0,0,6,0" VerticalAlignment="Center"/>
+            <TextBox Width="220"
+                     Text="{Binding SearchId, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Введите часть ID: cad_number / sk_id / reg_numb_border"/>
+            <TextBlock Text="Адрес:" Margin="12,0,6,0" VerticalAlignment="Center"/>
             <TextBox Width="320"
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                     
-                     ToolTip="Введите часть ID: cad_number, sk_id, reg_numb_border"/>
+                     Text="{Binding SearchAddress, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="Введите часть адреса (readable_address)"/>
             <Button Content="Очистить" Command="{Binding ClearSearchCommand}" Margin="6,0,0,0"/>
         </ToolBar>
 

@@ -94,7 +94,6 @@ public sealed class XmlIndexBuilder
         foreach (var r in roots)
             r.Items.Sort((a, b) => string.Compare(a.DisplayId, b.DisplayId, StringComparison.Ordinal));
 
-
         return new IndexModel(roots);
     }
 
@@ -102,10 +101,9 @@ public sealed class XmlIndexBuilder
     {
         var id = def.IdSelector(itemElement);
         if (string.IsNullOrWhiteSpace(id)) return;
-
         var realContainer = GuessContainerName(itemElement);
         rootItems.Items.Add(new NodeModel(
-            def.Kind, id, itemElement, realContainer, container.ItemName));
+            def.Kind, id, itemElement, realContainer, container.ItemName, ExtractAddress(itemElement)));
     }
 
     private static string? FirstNonEmpty(params string?[] values)
@@ -124,5 +122,31 @@ public sealed class XmlIndexBuilder
         }
 
         return "unknown_container";
+    }
+    
+    private static string? ExtractAddress(XElement item)
+    {
+        // 1) Предпочтительно readable_address
+        var readable = item.Descendants().FirstOrDefault(x => x.Name.LocalName == "readable_address");
+        if (readable != null)
+        {
+            var txt = (readable.Value ?? string.Empty).Trim();
+            if (!string.IsNullOrWhiteSpace(txt)) return txt;
+        }
+
+
+        // 2) Иначе попытаться собрать текст из <address>
+        var addr = item.Descendants().FirstOrDefault(x => x.Name.LocalName == "address");
+        if (addr != null)
+        {
+            var parts = addr.Descendants()
+                .Where(n => !n.HasElements)
+                .Select(n => (n.Value ?? string.Empty).Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Take(50);
+            var joined = string.Join(", ", parts);
+            if (!string.IsNullOrWhiteSpace(joined)) return joined;
+        }
+        return null;
     }
 }

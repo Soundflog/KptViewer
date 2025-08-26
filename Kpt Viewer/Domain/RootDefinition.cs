@@ -10,11 +10,9 @@ public sealed class RootDefinition(
 {
     public RootKind Kind { get; } = kind;
     public string DisplayName { get; } = displayName;
-
-
+    
     // One group can aggregate multiple containers (e.g., ObjectRealty: build_records + construction_records)
     public IReadOnlyList<ContainerSpec> Containers { get; } = containers.ToList();
-
-
+    
     public Func<XElement, string?> IdSelector { get; } = idSelector;
 }

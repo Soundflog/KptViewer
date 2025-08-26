@@ -9,4 +9,13 @@
         <UseWPF>true</UseWPF>
     </PropertyGroup>
 
+    <ItemGroup>
+      <Compile Update="ViewModels\ItemNodeVm.cs">
+        <DependentUpon>INodeVm.cs</DependentUpon>
+      </Compile>
+      <Compile Update="ViewModels\RootNodeVm.cs">
+        <DependentUpon>INodeVm.cs</DependentUpon>
+      </Compile>
+    </ItemGroup>
+
 </Project>
