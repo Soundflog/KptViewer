@@ -53,7 +53,7 @@ public sealed class XmlIndexBuilder
         )
     ];
 
-    public static IndexModel Build(XDocument doc)
+    public IndexModel Build(XDocument doc)
     {
         var roots = new List<RootItems>();
         var ns = doc.Root?.Name.Namespace ?? XNamespace.None; // No-op if no namespace
